@@ -72,9 +72,9 @@ jobs:
           path: |
             ~/.buildozer
             .buildozer
-          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
+          key: ${{ runner.os }}-buildozer-v2-${{ hashFiles('buildozer.spec') }}
           restore-keys: |
-            ${{ runner.os }}-buildozer-
+            ${{ runner.os }}-buildozer-v2-
 
       - name: Instalar Buildozer y Cython compatible
         run: |
@@ -83,11 +83,11 @@ jobs:
 
       - name: Compilar APK de Depuración (Debug APK)
         run: |
-          buildozer -v android debug
+          yes | buildozer -v android debug
 
       - name: Compilar Android App Bundle para Producción (Release AAB)
         run: |
-          buildozer -v android release
+          yes | buildozer -v android release
 
       - name: Subir APK de Depuración Generado
         uses: actions/upload-artifact@v4

@@ -57,11 +57,14 @@ android.api = 34
 # (int) Minimum API your APK / AAB will support (API 21 = Android 5.0 Lollipop)
 android.minapi = 21
 
-# (int) Android SDK version to use
-#android.sdk = 34
+# (str) Version of the Android build tools to use (versión estable compatible con API 34)
+android.build_tools_version = 34.0.0
 
 # (str) Android NDK version to use
-#android.ndk = 25b
+android.ndk = 25b
+
+# (bool) If True, automatically accept Android SDK license agreements (para automatización CI/CD)
+android.accept_sdk_license = True
 
 # (bool) Use --private data storage (True) or --dir public storage (False)
 android.private_storage = True
