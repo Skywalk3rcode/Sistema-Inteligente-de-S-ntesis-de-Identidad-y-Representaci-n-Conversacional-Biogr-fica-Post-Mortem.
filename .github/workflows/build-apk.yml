@@ -9,25 +9,36 @@ on:
 
 jobs:
   test:
-    name: Ejecutar Pruebas Automatizadas
+    name: Ejecutar Suite de Pruebas Automatizadas
     runs-on: ubuntu-latest
+
     steps:
       - name: Clonar repositorio
         uses: actions/checkout@v4
 
-      - name: Configurar Python
+      - name: Configurar Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
 
-      - name: Instalar dependencias para pruebas
+      - name: Instalar dependencias del sistema para Xvfb y OpenGL (Headless CI)
         run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
+          sudo apt-get update
+          sudo apt-get install -y xvfb libgl1-mesa-dev libgles2-mesa-dev mesa-utils mtdev-tools x11-xserver-utils
 
-      - name: Ejecutar Suite de Pruebas Pytest
+      - name: Instalar dependencias de Python
         run: |
-          pytest tests/ -v
+          python -m pip install --upgrade pip
+          python -m pip install pytest pytest-xvfb
+          python -m pip install -r requirements.txt
+
+      - name: Ejecutar Suite de Pruebas Pytest con Xvfb
+        env:
+          KIVY_NO_ARGS: "1"
+          KIVY_NO_CONSOLELOG: "1"
+        run: |
+          xvfb-run -a pytest tests/ -v
 
   build:
     name: Compilar APK y AAB con Buildozer
@@ -38,17 +49,22 @@ jobs:
       - name: Clonar repositorio
         uses: actions/checkout@v4
 
-      - name: Configurar Python
+      - name: Configurar Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
+      - name: Configurar Java 17 para Android SDK / Gradle
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
       - name: Instalar dependencias del sistema para Buildozer, SDK y NDK
         run: |
-          sudo apt update
-          sudo apt install -y git zip unzip autoconf libtool pkg-config zlib1g-dev \
-            libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev \
-            build-essential libsqlite3-dev openjdk-17-jdk
+          sudo apt-get update
+          sudo apt-get install -y git zip unzip autoconf libtool pkg-config zlib1g-dev \
+            libncurses-dev cmake libffi-dev libssl-dev build-essential libsqlite3-dev
 
       - name: Cache de Dependencias Buildozer y Android SDK/NDK
         uses: actions/cache@v4
@@ -60,10 +76,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildozer-
 
-      - name: Instalar Buildozer y Cython
+      - name: Instalar Buildozer y Cython compatible
         run: |
-          pip install --upgrade pip
-          pip install buildozer cython virtualenv
+          python -m pip install --upgrade pip
+          python -m pip install "cython<3" buildozer virtualenv
 
       - name: Compilar APK de Depuración (Debug APK)
         run: |
@@ -79,6 +95,7 @@ jobs:
           name: LegadoVivo-Android-Debug-APK
           path: bin/*.apk
           retention-days: 14
+          if-no-files-found: warn
 
       - name: Subir AAB de Producción Generado (Google Play)
         uses: actions/upload-artifact@v4
@@ -86,5 +103,4 @@ jobs:
           name: LegadoVivo-Android-Release-AAB
           path: bin/*.aab
           retention-days: 14
-
-
+          if-no-files-found: warn
