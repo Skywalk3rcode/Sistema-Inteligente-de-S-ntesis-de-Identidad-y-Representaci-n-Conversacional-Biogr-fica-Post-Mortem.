@@ -1,0 +1,90 @@
+name: Compilar Artefactos Android (APK y AAB)
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Ejecutar Pruebas Automatizadas
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependencias para pruebas
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Ejecutar Suite de Pruebas Pytest
+        run: |
+          pytest tests/ -v
+
+  build:
+    name: Compilar APK y AAB con Buildozer
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependencias del sistema para Buildozer, SDK y NDK
+        run: |
+          sudo apt update
+          sudo apt install -y git zip unzip autoconf libtool pkg-config zlib1g-dev \
+            libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev \
+            build-essential libsqlite3-dev openjdk-17-jdk
+
+      - name: Cache de Dependencias Buildozer y Android SDK/NDK
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.buildozer
+            .buildozer
+          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
+          restore-keys: |
+            ${{ runner.os }}-buildozer-
+
+      - name: Instalar Buildozer y Cython
+        run: |
+          pip install --upgrade pip
+          pip install buildozer cython virtualenv
+
+      - name: Compilar APK de Depuración (Debug APK)
+        run: |
+          buildozer -v android debug
+
+      - name: Compilar Android App Bundle para Producción (Release AAB)
+        run: |
+          buildozer -v android release
+
+      - name: Subir APK de Depuración Generado
+        uses: actions/upload-artifact@v4
+        with:
+          name: LegadoVivo-Android-Debug-APK
+          path: bin/*.apk
+          retention-days: 14
+
+      - name: Subir AAB de Producción Generado (Google Play)
+        uses: actions/upload-artifact@v4
+        with:
+          name: LegadoVivo-Android-Release-AAB
+          path: bin/*.aab
+          retention-days: 14
+
+

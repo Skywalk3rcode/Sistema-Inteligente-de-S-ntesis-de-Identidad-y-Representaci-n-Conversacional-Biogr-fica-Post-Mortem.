@@ -1,0 +1,25 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Pytest / Caches
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local databases
+*.db
+*.sqlite3
+
+# Kivy / Buildozer output
+.buildozer/
+bin/
+
+# Environment / IDEs
+.env
+venv/
+.venv/
+.idea/
+.vscode/
+

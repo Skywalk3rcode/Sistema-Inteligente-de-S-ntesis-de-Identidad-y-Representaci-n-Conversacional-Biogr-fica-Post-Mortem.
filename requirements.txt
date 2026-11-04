@@ -1,0 +1,6 @@
+# Dependencias para LegadoVivo - Segundo Incremento (Python Móvil)
+kivy>=2.3.0
+plyer>=2.1.0
+pillow>=10.0.0
+pytest>=8.0.0
+
