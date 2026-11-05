@@ -31,7 +31,8 @@ class ConfirmDeleteDialog(ModalView):
 
         with container.canvas.before:
             Color(1, 1, 1, 1)  # Fondo blanco
-            self.rect = RoundedRectangle(size=container.size, pos=container.pos, radius=[dp(16)])
+            # size=(0,0): el binding _update_rect actualizará al tamaño real en el primer frame
+            self.rect = RoundedRectangle(size=(0, 0), pos=container.pos, radius=[dp(16)])
         container.bind(size=self._update_rect, pos=self._update_rect)
 
         # Título
@@ -117,7 +118,8 @@ class DisclaimerInfoDialog(ModalView):
 
         with container.canvas.before:
             Color(1, 1, 1, 1)
-            self.rect = RoundedRectangle(size=container.size, pos=container.pos, radius=[dp(16)])
+            # size=(0,0): el binding _update_rect actualizará al tamaño real en el primer frame
+            self.rect = RoundedRectangle(size=(0, 0), pos=container.pos, radius=[dp(16)])
         container.bind(size=self._update_rect, pos=self._update_rect)
 
         title = Label(

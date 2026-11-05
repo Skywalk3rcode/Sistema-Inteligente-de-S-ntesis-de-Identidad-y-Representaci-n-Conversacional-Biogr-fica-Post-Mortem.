@@ -49,7 +49,7 @@ fullscreen = 0
 #
 
 # (list) Permissions
-android.permissions = INTERNET,ACCESS_NETWORK_STATE
+android.permissions = INTERNET,ACCESS_NETWORK_STATE,CAMERA,READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE
 
 # (int) Target Android API (API 34 = Android 14, requerido para Google Play)
 android.api = 34

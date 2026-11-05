@@ -26,7 +26,7 @@ class CapsuleRepository:
         return conn
 
     def _init_database(self) -> None:
-        """Inicializa la tabla e índices si no existen."""
+        """Inicializa la tabla e índices si no existen, y aplica migraciones pendientes."""
         conn = self._get_connection()
         try:
             cursor = conn.cursor()
@@ -38,7 +38,8 @@ class CapsuleRepository:
                     content TEXT NOT NULL,
                     is_approved INTEGER NOT NULL DEFAULT 0,
                     created_at TEXT NOT NULL,
-                    updated_at TEXT NOT NULL
+                    updated_at TEXT NOT NULL,
+                    photo_path TEXT
                 )
             """)
             cursor.execute("""
@@ -49,6 +50,14 @@ class CapsuleRepository:
                 CREATE INDEX IF NOT EXISTS idx_capsules_topic 
                 ON capsules (topic)
             """)
+
+            # Migración: añadir columna photo_path en bases de datos existentes.
+            # Si ya existe, SQLite lanza OperationalError — se ignora de forma segura.
+            try:
+                cursor.execute("ALTER TABLE capsules ADD COLUMN photo_path TEXT")
+            except Exception:
+                pass  # La columna ya existe; migración no necesaria
+
             conn.commit()
         finally:
             conn.close()
@@ -59,15 +68,17 @@ class CapsuleRepository:
         try:
             cursor = conn.cursor()
             cursor.execute("""
-                INSERT INTO capsules (title, topic, content, is_approved, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO capsules
+                    (title, topic, content, is_approved, created_at, updated_at, photo_path)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             """, (
                 capsule.title,
                 capsule.topic,
                 capsule.content,
                 1 if capsule.is_approved else 0,
                 capsule.created_at,
-                capsule.updated_at
+                capsule.updated_at,
+                capsule.photo_path
             ))
             capsule.id = cursor.lastrowid
             conn.commit()
@@ -85,7 +96,8 @@ class CapsuleRepository:
             cursor = conn.cursor()
             cursor.execute("""
                 UPDATE capsules
-                SET title = ?, topic = ?, content = ?, is_approved = ?, updated_at = ?
+                SET title = ?, topic = ?, content = ?, is_approved = ?,
+                    updated_at = ?, photo_path = ?
                 WHERE id = ?
             """, (
                 capsule.title,
@@ -93,6 +105,7 @@ class CapsuleRepository:
                 capsule.content,
                 1 if capsule.is_approved else 0,
                 capsule.updated_at,
+                capsule.photo_path,
                 capsule.id
             ))
             conn.commit()
@@ -115,7 +128,8 @@ class CapsuleRepository:
                     content=row["content"],
                     is_approved=bool(row["is_approved"]),
                     created_at=row["created_at"],
-                    updated_at=row["updated_at"]
+                    updated_at=row["updated_at"],
+                    photo_path=row["photo_path"] if "photo_path" in row.keys() else None
                 )
             return None
         finally:
@@ -150,7 +164,8 @@ class CapsuleRepository:
                     content=row["content"],
                     is_approved=bool(row["is_approved"]),
                     created_at=row["created_at"],
-                    updated_at=row["updated_at"]
+                    updated_at=row["updated_at"],
+                    photo_path=row["photo_path"] if "photo_path" in row.keys() else None
                 )
                 for row in rows
             ]

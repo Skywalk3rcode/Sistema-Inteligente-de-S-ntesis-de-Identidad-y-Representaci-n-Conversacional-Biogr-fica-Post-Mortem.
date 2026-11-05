@@ -29,8 +29,8 @@ from services.connectivity_service import ConnectivityService
 from ui.app_ui import MainMobileLayout
 
 
-# Configurar comportamiento del teclado virtual en Android (evitar superposición en inputs)
-Window.softinput_mode = "below_target"
+# NOTA: Window.softinput_mode se configura dentro de build() para garantizar
+# que la ventana de Android ya esté completamente inicializada al momento de aplicarlo.
 
 
 class LegadoVivoApp(App):
@@ -40,7 +40,11 @@ class LegadoVivoApp(App):
 
     def build(self):
         self.title = f"{APP_NAME} - Preservación de Memoria"
-        
+
+        # Configurar teclado virtual aquí, con la ventana ya inicializada por Kivy
+        # (evitar superposición de inputs en Android)
+        Window.softinput_mode = "below_target"
+
         # Icono de aplicación móvil
         if os.path.exists("assets/icon.png"):
             self.icon = "assets/icon.png"

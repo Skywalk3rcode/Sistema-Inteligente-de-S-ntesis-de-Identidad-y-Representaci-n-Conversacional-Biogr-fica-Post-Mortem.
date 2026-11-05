@@ -36,7 +36,10 @@ class MainMobileLayout(BoxLayout):
         # Fondo general de la app (gris claro suave estilo Android Slate 50)
         with self.canvas.before:
             Color(0.96, 0.97, 0.98, 1)
-            self.bg_rect = Rectangle(size=self.size, pos=self.pos)
+            # Inicializar con size=(0,0): los bindings de abajo actualizarán al tamaño real
+            # en el primer evento de resize. Esto evita el artefacto visual en Android
+            # donde el canvas se renderiza ANTES de que el layout haya asignado tamaños.
+            self.bg_rect = Rectangle(size=(0, 0), pos=self.pos)
         self.bind(size=self._update_bg, pos=self._update_bg)
 
         # 1. Barra de Aplicación Superior (Top AppBar)
@@ -77,10 +80,27 @@ class MainMobileLayout(BoxLayout):
         Clock.schedule_interval(lambda dt: self.update_connectivity_status(), 3.0)
         # Actualización inicial inmediata
         Clock.schedule_once(lambda dt: self.update_connectivity_status(), 0.1)
+        # Forzar un pase de layout en el primer frame para garantizar que todos
+        # los widgets reciban sus tamaños y posiciones correctas en Android.
+        # En escritorio esto es un no-op seguro; en Android evita el bug de (0,0).
+        Clock.schedule_once(self._force_layout, 0)
 
     def _update_bg(self, instance, value):
         self.bg_rect.pos = instance.pos
         self.bg_rect.size = instance.size
+
+    def _force_layout(self, dt):
+        """Fuerza la propagación de tamaño y posición en el primer frame.
+        Crítico en Android: el motor de layout puede no emitir un evento 'size'
+        antes del primer render si el widget raíz recibe su tamaño desde la JVM.
+        Al disparar size/pos manualmente, todos los callbacks de canvas.before
+        se ejecutan con los valores reales de la ventana.
+        """
+        self._update_bg(self, self.size)
+        for child in self.children:
+            # Disparar actualización de tamaño en hijos directos para propagar
+            if hasattr(child, 'size'):
+                child._trigger_layout()
 
     def _build_top_bar(self):
         """Construye la barra superior con identidad visual y botón de información ética."""
@@ -93,7 +113,8 @@ class MainMobileLayout(BoxLayout):
         )
         with top_bar.canvas.before:
             Color(0.1, 0.22, 0.45, 1)  # Azul Índigo Profundo
-            self.top_rect = Rectangle(size=top_bar.size, pos=top_bar.pos)
+            # size=(0,0): los bindings actualizarán en el primer evento de tamaño
+            self.top_rect = Rectangle(size=(0, 0), pos=top_bar.pos)
         top_bar.bind(
             size=lambda inst, v: setattr(self.top_rect, "size", inst.size),
             pos=lambda inst, v: setattr(self.top_rect, "pos", inst.pos)
@@ -148,7 +169,8 @@ class MainMobileLayout(BoxLayout):
         )
         with self.banner_box.canvas.before:
             self.banner_color = Color(0.92, 0.96, 0.92, 1)
-            self.banner_rect = Rectangle(size=self.banner_box.size, pos=self.banner_box.pos)
+            # size=(0,0): los bindings actualizarán en el primer evento de tamaño
+            self.banner_rect = Rectangle(size=(0, 0), pos=self.banner_box.pos)
         self.banner_box.bind(
             size=lambda inst, v: setattr(self.banner_rect, "size", inst.size),
             pos=lambda inst, v: setattr(self.banner_rect, "pos", inst.pos)
@@ -191,7 +213,8 @@ class MainMobileLayout(BoxLayout):
         )
         with nav_box.canvas.before:
             Color(1, 1, 1, 1)  # Blanco puro
-            self.nav_rect = Rectangle(size=nav_box.size, pos=nav_box.pos)
+            # size=(0,0): los bindings actualizarán en el primer evento de tamaño
+            self.nav_rect = Rectangle(size=(0, 0), pos=nav_box.pos)
         nav_box.bind(
             size=lambda inst, v: setattr(self.nav_rect, "size", inst.size),
             pos=lambda inst, v: setattr(self.nav_rect, "pos", inst.pos)

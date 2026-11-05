@@ -50,7 +50,8 @@ class QueryScreen(Screen):
         )
         with disclaimer_box.canvas.before:
             Color(0.98, 0.94, 0.85, 1)  # Fondo ámbar suave
-            self.disclaimer_rect = RoundedRectangle(size=disclaimer_box.size, pos=disclaimer_box.pos, radius=[dp(8)])
+            # size=(0,0): el binding actualizará al tamaño real en el primer frame
+            self.disclaimer_rect = RoundedRectangle(size=(0, 0), pos=disclaimer_box.pos, radius=[dp(8)])
         disclaimer_box.bind(
             size=lambda inst, v: setattr(self.disclaimer_rect, "size", inst.size),
             pos=lambda inst, v: setattr(self.disclaimer_rect, "pos", inst.pos)
@@ -170,7 +171,8 @@ class QueryScreen(Screen):
         )
         with card.canvas.before:
             Color(1, 1, 1, 1)
-            self.initial_rect = RoundedRectangle(size=card.size, pos=card.pos, radius=[dp(12)])
+            # size=(0,0): el binding actualizará al tamaño real en el primer frame
+            self.initial_rect = RoundedRectangle(size=(0, 0), pos=card.pos, radius=[dp(12)])
         card.bind(
             size=lambda inst, v: setattr(self.initial_rect, "size", inst.size),
             pos=lambda inst, v: setattr(self.initial_rect, "pos", inst.pos)
@@ -222,7 +224,8 @@ class QueryScreen(Screen):
             )
             with abstention_card.canvas.before:
                 Color(0.98, 0.94, 0.94, 1)  # Fondo rojizo muy suave
-                self.abs_rect = RoundedRectangle(size=abstention_card.size, pos=abstention_card.pos, radius=[dp(12)])
+                # size=(0,0): el binding actualizará al tamaño real en el primer frame
+                self.abs_rect = RoundedRectangle(size=(0, 0), pos=abstention_card.pos, radius=[dp(12)])
             abstention_card.bind(
                 size=lambda inst, v: setattr(self.abs_rect, "size", inst.size),
                 pos=lambda inst, v: setattr(self.abs_rect, "pos", inst.pos)
@@ -277,7 +280,8 @@ class QueryScreen(Screen):
         )
         with answer_card.canvas.before:
             Color(1, 1, 1, 1)
-            self.ans_rect = RoundedRectangle(size=answer_card.size, pos=answer_card.pos, radius=[dp(12)])
+            # size=(0,0): el binding actualizará al tamaño real en el primer frame
+            self.ans_rect = RoundedRectangle(size=(0, 0), pos=answer_card.pos, radius=[dp(12)])
         answer_card.bind(
             size=lambda inst, v: setattr(self.ans_rect, "size", inst.size),
             pos=lambda inst, v: setattr(self.ans_rect, "pos", inst.pos)
@@ -329,10 +333,13 @@ class QueryScreen(Screen):
             )
             with src_card.canvas.before:
                 Color(0.95, 0.97, 1.0, 1)  # Azul claro tenue
-                self.src_rect = RoundedRectangle(size=src_card.size, pos=src_card.pos, radius=[dp(8)])
+                # BUG CORREGIDO: 'self.src_rect' se sobreescribía en cada iteración del bucle,
+                # lo que hacía que los bindings de tarjetas previas apuntaran al último rect.
+                # Solución: capturar el rect como variable local en el closure (rect=rect).
+                src_rect = RoundedRectangle(size=(0, 0), pos=src_card.pos, radius=[dp(8)])
             src_card.bind(
-                size=lambda inst, v: setattr(self.src_rect, "size", inst.size),
-                pos=lambda inst, v: setattr(self.src_rect, "pos", inst.pos)
+                size=lambda inst, v, rect=src_rect: setattr(rect, "size", inst.size),
+                pos=lambda inst, v, rect=src_rect: setattr(rect, "pos", inst.pos)
             )
 
             st_lbl = Label(
