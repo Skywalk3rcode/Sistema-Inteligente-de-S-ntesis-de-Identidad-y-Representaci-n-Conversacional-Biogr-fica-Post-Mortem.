@@ -10,6 +10,7 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.label import Label
 from kivy.uix.button import Button
+from kivy.uix.image import Image
 from kivy.graphics import Color, RoundedRectangle
 from kivy.metrics import dp
 from models.capsule import Capsule
@@ -50,6 +51,19 @@ class CapsuleCard(BoxLayout):
             # Patrón requerido en Android donde el canvas se renderiza antes del layout pass.
             self.bg_rect = RoundedRectangle(size=(0, 0), pos=self.pos, radius=[dp(12)])
         self.bind(size=self._update_bg, pos=self._update_bg)
+
+        # ── Miniatura de fotografía (visible solo si la cápsula tiene foto) ─────────
+        import os
+        has_photo = bool(capsule.photo_path and os.path.isfile(str(capsule.photo_path)))
+        if has_photo:
+            photo_thumb = Image(
+                source=capsule.photo_path,
+                size_hint=(1, None),
+                height=dp(140),
+                fit_mode="cover",
+                allow_stretch=True
+            )
+            self.add_widget(photo_thumb)
 
         # Fila superior: Tema y Estado de Aprobación
         header_row = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(26), spacing=dp(8))

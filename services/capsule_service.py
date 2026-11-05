@@ -7,6 +7,7 @@ from typing import Tuple, Optional, List
 from datetime import datetime
 from models.capsule import Capsule
 from storage.repository import CapsuleRepository
+from services import photo_service
 
 
 class CapsuleService:
@@ -51,10 +52,11 @@ class CapsuleService:
         title: str,
         topic: str,
         content: str,
-        is_approved: bool = False
+        is_approved: bool = False,
+        photo_path: Optional[str] = None
     ) -> Tuple[bool, str, Optional[Capsule]]:
         """
-        Valida y almacena una nueva cápsula.
+        Valida y almacena una nueva cápsula, con foto opcional adjunta.
         """
         is_valid, error_msg = self.validate_fields(title, topic, content)
         if not is_valid:
@@ -64,7 +66,8 @@ class CapsuleService:
             title=title.strip(),
             topic=topic.strip(),
             content=content.strip(),
-            is_approved=is_approved
+            is_approved=is_approved,
+            photo_path=photo_path
         )
 
         try:
@@ -79,10 +82,15 @@ class CapsuleService:
         title: str,
         topic: str,
         content: str,
-        is_approved: bool
+        is_approved: bool,
+        photo_path: Optional[str] = None,
+        clear_photo: bool = False
     ) -> Tuple[bool, str, Optional[Capsule]]:
         """
         Valida y actualiza los datos de una cápsula existente.
+
+        photo_path: nueva ruta de foto a asignar (None = no cambiar la actual).
+        clear_photo: si True, elimina la foto actual y asigna None.
         """
         is_valid, error_msg = self.validate_fields(title, topic, content)
         if not is_valid:
@@ -97,6 +105,17 @@ class CapsuleService:
         existing.content = content.strip()
         existing.is_approved = is_approved
         existing.updated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        if clear_photo:
+            # Eliminar archivo de foto anterior si existía
+            photo_service.delete_photo(existing.photo_path)
+            existing.photo_path = None
+        elif photo_path is not None:
+            # Si se proporciona una nueva foto, eliminar la anterior y asignar la nueva
+            if photo_path != existing.photo_path:
+                photo_service.delete_photo(existing.photo_path)
+            existing.photo_path = photo_path
+        # Si photo_path=None y clear_photo=False, se conserva la foto actual
 
         try:
             success = self.repository.update(existing)
@@ -128,7 +147,7 @@ class CapsuleService:
 
     def delete_capsule(self, capsule_id: int) -> Tuple[bool, str]:
         """
-        Elimina de forma permanente una cápsula.
+        Elimina de forma permanente una cápsula y su fotografía adjunta si existe.
         """
         capsule = self.repository.get_by_id(capsule_id)
         if not capsule:
@@ -137,6 +156,8 @@ class CapsuleService:
         try:
             success = self.repository.delete(capsule_id)
             if success:
+                # Eliminar el archivo de foto del almacenamiento privado
+                photo_service.delete_photo(capsule.photo_path)
                 return True, f"Cápsula '{capsule.title}' eliminada exitosamente."
             return False, "No se pudo completar la eliminación."
         except Exception as e:
